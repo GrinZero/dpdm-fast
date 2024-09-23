@@ -1,24 +1,27 @@
 use lazy_static::lazy_static;
 use regex::Regex;
-use std::collections::HashMap;
-use std::sync::Mutex;
+use std::sync::Arc;
+use dashmap::DashMap;
 
 use super::path::join_paths;
 
 lazy_static! {
-    static ref CACHE: Mutex<HashMap<String, Option<String>>> = Mutex::new(HashMap::new());
+    static ref CACHE: Arc<DashMap<String, Option<String>>> = Arc::new(DashMap::new());
+    static ref REGEX_CACHE: Arc<DashMap<String, Regex>> = Arc::new(DashMap::new());
 }
 
 pub fn match_alias_pattern(source: &str, root: &str, alias: &str, path: &str) -> Option<String> {
     let cache_key = format!("{}|{}|{}|{}", source, root, alias, path);
 
-    if let Some(cached_result) = CACHE.lock().unwrap().get(&cache_key) {
+    if let Some(cached_result) = CACHE.get(&cache_key) {
         return cached_result.clone();
     }
 
     // Step 1: 创建匹配别名的正则表达式，将别名中的 `*` 替换为正则表达式的 `.*`
-    let alias_regex_str = regex::escape(alias).replace(r"\*", r"(.*)");
-    let alias_regex = Regex::new(&format!("^{}$", alias_regex_str)).ok()?;
+    let alias_regex = REGEX_CACHE.entry(alias.to_string()).or_insert_with(|| {
+        let alias_regex_str = regex::escape(alias).replace(r"\*", r"(.*)");
+        Regex::new(&format!("^{}$", alias_regex_str)).unwrap()
+    });
 
     // Step 2: 检查 source 是否匹配别名模式
     if let Some(captures) = alias_regex.captures(source) {
