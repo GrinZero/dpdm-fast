@@ -11,6 +11,7 @@
 
 use super::node_builtins::BUILTINS;
 use dashmap::DashMap;
+use lazy_static::lazy_static;
 use serde_json::Value;
 use std::default::Default;
 use std::error::Error as StdError;
@@ -18,8 +19,11 @@ use std::fmt;
 use std::fs::File;
 use std::io::{Error as IOError, ErrorKind as IOErrorKind};
 use std::path::{Component as PathComponent, Path, PathBuf};
-
 static ROOT: &str = "/";
+
+lazy_static! {
+    static ref CACHE: DashMap<String, Option<PathBuf>> = DashMap::new();
+}
 
 #[derive(Debug)]
 pub enum Error {
@@ -502,9 +506,22 @@ pub fn is_core_module(target: &str) -> bool {
 /// }
 /// ```
 pub fn resolve(target: &str) -> Result<PathBuf, Error> {
-    Resolver::default()
+    let key = target.to_string();
+    if let Some(cached) = CACHE.get(&key) {
+        return Ok(cached.clone().unwrap());
+    }
+
+    let result: Result<PathBuf, Error> = Resolver::default()
         .with_basedir(PathBuf::from("."))
-        .resolve(target)
+        .resolve(target);
+
+    match result {
+        Ok(path) => {
+            CACHE.insert(key, Some(path.clone()));
+            Ok(path)
+        }
+        Err(err) => Err(err),
+    }
 }
 
 /// Resolve a node.js module path relative to `basedir`.
@@ -517,7 +534,20 @@ pub fn resolve(target: &str) -> Result<PathBuf, Error> {
 /// }
 /// ```
 pub fn resolve_from(target: &str, basedir: PathBuf) -> Result<PathBuf, Error> {
-    Resolver::default().with_basedir(basedir).resolve(target)
+    let key = format!("{}|{}", target, basedir.to_str().unwrap());
+    if let Some(cached) = CACHE.get(&key) {
+        return Ok(cached.clone().unwrap());
+    }
+
+    let result: Result<PathBuf, Error> = Resolver::default().with_basedir(basedir).resolve(target);
+
+    match result {
+        Ok(path) => {
+            CACHE.insert(key, Some(path.clone()));
+            Ok(path)
+        }
+        Err(err) => Err(err),
+    }
 }
 
 #[cfg(test)]

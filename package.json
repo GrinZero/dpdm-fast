@@ -1,6 +1,6 @@
 {
   "name": "@sourcebug/dpdm",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "private": false,
   "description": "Analyze circular dependencies in your JavaScript/TypeScript projects.",
   "publishConfig": {

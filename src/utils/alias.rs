@@ -1,7 +1,7 @@
+use dashmap::DashMap;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::sync::Arc;
-use dashmap::DashMap;
 
 use super::path::join_paths;
 
@@ -34,7 +34,11 @@ pub fn match_alias_pattern(source: &str, root: &str, alias: &str, path: &str) ->
         // Step 4: 使用 `join_paths` 将 root 和 transformed_path 组合成完整路径
         let full_path = join_paths(&[root, &transformed_path]);
 
-        return Some(full_path.to_string_lossy().to_string());
+        let full_path_str = full_path.to_string_lossy().to_string();
+
+        CACHE.insert(cache_key, Some(full_path_str.clone()));
+
+        return Some(full_path_str);
     }
 
     // // 如果没有匹配，返回 source 原值
