@@ -2,11 +2,11 @@ use std::path::{Path, PathBuf};
 
 use std::fs;
 
+use crate::node_resolve::lib::resolve_from;
 use crate::parser::types::Alias;
 use crate::utils::alias::match_alias_pattern;
 use crate::utils::path::join_paths;
 use futures::future::join_all;
-use node_resolve::resolve_from;
 
 pub async fn append_suffix(
     request: &str,

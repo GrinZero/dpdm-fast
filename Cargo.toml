@@ -8,18 +8,15 @@ clap = { version = "4.5.17", features = ["derive"] } # 用于命令行参数解�
 glob = "0.3"                                         # 用于文件路径匹配
 serde_json = "1.0"                                   # 用于 JSON 处理
 tokio = { version = "1.0", features = ["full"] }
-indicatif = "0.16"
 regex = "1"
 swc_common = "0.39.0"
 swc_ecma_parser = "0.151.0"
 swc_ecma_visit = "0.106.0"
 swc_ecma_transforms_base = "0.148"
 swc_ecma_transforms_typescript = "0.201.0"
-swc_ecma_transforms = "0.241"
 swc_ecma_ast = "0.120"
 serde = "1.0"
 futures = "0.3"
-node-resolve = "2.2"
 lazy_static = "1.5.0"
 cross = "0.2"
 spinoff = "0.8.0"
