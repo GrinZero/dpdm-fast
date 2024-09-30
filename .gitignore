@@ -27,4 +27,5 @@ coverage/
 
 # Added by cargo
 
-/target
+target
+/profile.json

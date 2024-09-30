@@ -1,5 +1,5 @@
 <h1 align="center">
-    DPDM
+    dpdm-fast
     <br/>
     <img src="https://img.shields.io/npm/v/dpdm" alt="version">
     <img src="https://img.shields.io/npm/dm/dpdm" alt="downloads">
@@ -8,7 +8,7 @@
     <img src="https://img.shields.io/github/license/acrazing/dpdm" alt="license">
 </h1>
 
-<p align="center">A robust static dependency analyzer for your <code>JavaScript</code> and <code>TypeScript</code> projects.</p>
+<p align="center">A robust static dependency analyzer for your <code>JavaScript</code> and <code>TypeScript</code> projects with <code>Rust</code> !</p>
 
 <p align="center">
     <a href="#highlights">Highlights</a>
@@ -24,12 +24,14 @@
 
 ## Highlights
 
+> This is fork from [acrazing/dpdm](https://github.com/acrazing/dpdm), and compability with `dpdm` 99%. It's faster and bring a performance improvement of more than ten times!(Please use `--no-progress` to be fastest, `progress` will be slower than `dpdm` with `node`).
+
 - Supports `CommonJS`, `ESM`.
 - Supports `JavaScript` and `TypeScript` completely.
   - Supports TypeScript [path mapping](https://www.typescriptlang.org/docs/handbook/module-resolution.html#path-mapping).
   - Supports ignore TypeScript type dependencies.
 - Light weight: use [TypeScript](https://npmjs.com/package/typescript) to parse all modules.
-- Fast: use asynchronous API to load modules.
+- Fast: use `Rust` and `swc-parser` to parse all modules. **This will bring a performance improvement of more than ten times!**
 - Stable output: This is compared to `madge`, whose results are completely inconclusive when analyze `TypeScript`.
 
 ## Install
@@ -37,17 +39,17 @@
 1. For command line
 
    ```bash
-   npm i -g dpdm
+   npm i -g dpdm-fast
    # or via yarn
-   yarn global add dpdm
+   yarn global add dpdm-fast
    ```
 
 2. As a module
 
    ```bash
-   npm i -D dpdm
+   npm i -D dpdm-fast
    # or via yarn
-   yarn add -D dpdm
+   yarn add -D dpdm-fast
    ```
 
 ## Usage in command line
@@ -95,44 +97,50 @@
 ### Options
 
 ```bash
-dpdm [options] <files...>
+$ dpdm --help
 
 Analyze the files' dependencies.
 
-Positionals:
-  files  The file paths or globs                                                            [string]
+Usage: dpdm [OPTIONS] <FILES>...
+
+Arguments:
+  <FILES>...  The file paths or globs
 
 Options:
-      --version                   Show version number                                      [boolean]
-      --context                   the context directory to shorten path, default is current
-                                  directory                                                 [string]
-      --extensions, --ext         comma separated extensions to resolve
-                                                  [string] [default: ".ts,.tsx,.mjs,.js,.jsx,.json"]
-      --js                        comma separated extensions indicate the file is js like
-                                                        [string] [default: ".ts,.tsx,.mjs,.js,.jsx"]
-      --include                   included filenames regexp in string, default includes all files
-                                                                            [string] [default: ".*"]
-      --exclude                   excluded filenames regexp in string, set as empty string to
-                                  include all files               [string] [default: "node_modules"]
-  -o, --output                    output json to file                                       [string]
-      --tree                      print tree to stdout                     [boolean] [default: true]
-      --circular                  print circular to stdout                 [boolean] [default: true]
-      --warning                   print warning to stdout                  [boolean] [default: true]
-      --tsconfig                  the tsconfig path, which is used for resolve path alias, default
-                                  is tsconfig.json if it exists in context directory        [string]
-  -T, --transform                 transform typescript modules to javascript before analyze, it
-                                  allows you to omit types dependency in typescript
-                                                                          [boolean] [default: false]
-      --exit-code                 exit with specified code, the value format is CASE:CODE,
-                                  `circular` is the only supported CASE, CODE should be a integer
-                                  between 0 and 128. For example: `dpdm --exit-code circular:1` the
-                                  program will exit with code 1 if circular dependency found.
-                                                                                            [string]
-      --progress                  show progress bar                        [boolean] [default: true]
-      --detect-unused-files-from  this file is a glob, used for finding unused files.       [string]
-      --skip-dynamic-imports      Skip parse import(...) statement.
-                                                              [string] [choices: "tree", "circular"]
-  -h, --help                      Show help                                                [boolean]
+      --context <CONTEXT>
+          The context directory to shorten path, default is current directory
+  -e, --extensions <EXTENSIONS>
+          Comma separated extensions to resolve [default: ts,tsx,mjs,js,jsx,json]
+      --js <JS>
+          Comma separated extensions indicate the file is js like [default: ts,tsx,mjs,js,jsx]
+      --include <INCLUDE>
+          Included filenames regexp in string, default includes all files [default: .*]
+      --exclude <EXCLUDE>
+          Excluded filenames regexp in string, set as empty string to include all files [default: node_modules]
+  -o, --output <OUTPUT>
+          Output json to file
+      --no-tree
+          Print tree to stdout
+      --circular
+          Print circular to stdout
+      --no-warning
+          Print warning to stdout
+      --tsconfig <TSCONFIG>
+          The tsconfig path, which is used for resolve path alias
+  -T, --transform
+          Transform typescript modules to javascript before analyze
+      --exit-code <EXIT_CODE>
+          Exit with specified code
+      --no-progress
+          Show progress bar
+      --detect-unused-files-from <DETECT_UNUSED_FILES_FROM>
+          This file is a glob, used for finding unused files
+      --skip-dynamic-imports <SKIP_DYNAMIC_IMPORTS>
+          Skip parse import(...) statement
+  -h, --help
+          Print help
+  -V, --version
+          Print version
 ```
 
 ### Example output
@@ -140,6 +148,8 @@ Options:
 ![Screenshot](./assets/screenshot.png)
 
 ## Usage as a package
+
+> TODO: This part has not yet been completed. So if you call the API, it will auto use `dpdm-ts`. Next time I will use `wasm-bindgen` to call rust api.
 
 ```typescript jsx
 import { parseDependencyTree, parseCircular, prettyCircular } from 'dpdm';

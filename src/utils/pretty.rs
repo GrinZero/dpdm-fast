@@ -1,6 +1,6 @@
 use colored::Colorize;
 
-use crate::parser::types::DependencyTree;
+use crate::{node_resolve::node_builtins::BUILTINS, parser::types::DependencyTree};
 use std::collections::HashMap;
 
 pub fn pretty_circular(circulars: &[Vec<String>], prefix: &str) -> String {
@@ -55,7 +55,7 @@ pub fn pretty_tree(tree: &DependencyTree, entries: &[String], prefix: &str) -> S
         .truecolor(144, 144, 144);
         let deps = tree.get(item);
 
-        if all_builtins().contains(&item) {
+        if BUILTINS.contains(&item) {
             lines.push(format!("{}{}", line, item.color("blue")));
             return;
         } else if !is_new {
@@ -114,49 +114,6 @@ pub fn pretty_tree(tree: &DependencyTree, entries: &[String], prefix: &str) -> S
     }
 
     lines.join("\n")
-}
-
-pub fn all_builtins() -> Vec<&'static str> {
-    vec![
-        "assert",
-        "buffer",
-        "child_process",
-        "cluster",
-        "console",
-        "constants",
-        "crypto",
-        "dgram",
-        "dns",
-        "domain",
-        "events",
-        "fs",
-        "http",
-        "http2",
-        "https",
-        "inspector",
-        "module",
-        "net",
-        "os",
-        "path",
-        "perf_hooks",
-        "process",
-        "punycode",
-        "querystring",
-        "readline",
-        "repl",
-        "stream",
-        "string_decoder",
-        "timers",
-        "tls",
-        "trace_events",
-        "tty",
-        "url",
-        "util",
-        "v8",
-        "vm",
-        "worker_threads",
-        "zlib",
-    ]
 }
 
 pub fn pretty_warning(warnings: &[String], prefix: &str) -> String {

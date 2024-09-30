@@ -1,10 +1,15 @@
 [tasks.dev]
 script = [
   "cargo build",
-  # "./target/debug/dpdm ./example/index.js -T --exit-code circular:1 --no-tree",
-  "./target/debug/dpdm ./example/index.js -T --exit-code circular:1 --no-tree --no-warning",
+  "./target/debug/dpdm ./example/index.js -T --exit-code circular:1 --no-tree"
 ]
 # script = ["cargo build", "./target/debug/dpdm ./example/index.js"]
+
+[tasks.dev-perf]
+script = [
+  "cargo build",
+  "samply record ./target/debug/dpdm /Users/bugyaluwang/Desktop/projects/moego-mobile/index.js -T --exit-code circular:1 --no-tree --no-warning",
+]
 
 [tasks.build-for-mac-arm64]
 script = ["cross build --target aarch64-apple-darwin --release"]
@@ -29,3 +34,7 @@ script = [
   "cross build --target aarch64-unknown-linux-musl --release",
   "cross build --target x86_64-pc-windows-gnu --release",
 ]
+
+[tasks.pre-dev]
+# 手动执行下边的命令
+script = ["cargo install cargo-make", "cargo install --locked samply"]

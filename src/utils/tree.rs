@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use crate::parser::{consts::DependencyKind, types::DependencyTree};
 
-use super::pretty::all_builtins;
+use crate::node_resolve::node_builtins::BUILTINS;
 
 pub fn is_empty<T>(v: &T) -> bool
 where
@@ -76,10 +76,9 @@ fn dependents(tree: &DependencyTree, key: &str) -> Vec<String> {
 pub fn parse_warnings(tree: &DependencyTree) -> Vec<String> {
     let mut warnings: Vec<String> = Vec::new();
     let mut builtin: HashSet<String> = HashSet::new();
-    let all_builtins = all_builtins();
 
     for (key, deps) in tree {
-        if !builtin.contains(key) && all_builtins.contains(&key.as_str()) {
+        if !builtin.contains(key) && BUILTINS.contains(&key.as_str()) {
             builtin.insert(format!("\"{}\"", key.clone()));
         }
         if deps.is_none() {
