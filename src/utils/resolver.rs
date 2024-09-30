@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 
+use tokio::fs::metadata;
 use std::fs;
 
 use crate::node_resolve::lib::resolve_from;
@@ -16,7 +17,7 @@ pub async fn append_suffix(
     let futures = extensions.iter().map(|ext| {
         let path_with_ext = format!("{}{}", request, ext);
         async move {
-            match fs::metadata(&path_with_ext) {
+            match metadata(&path_with_ext).await {
                 Ok(metadata) => {
                     if metadata.is_file() {
                         return Some(path_with_ext);
@@ -35,7 +36,7 @@ pub async fn append_suffix(
     }
 
     // 如果 request 是一个目录，则尝试添加 index 后缀，递归调用
-    match fs::metadata(request) {
+    match metadata(request).await {
         Ok(metadata) => {
             if metadata.is_dir() {
                 return append_suffix_boxed(&format!("{}/index", request), extensions).await;
@@ -97,7 +98,7 @@ pub async fn simple_resolver(
         .to_string_lossy()
         .into_owned();
     // 处理 package 的情况
-    match resolve_from(&pkg_path, base_dir.clone()) {
+    match resolve_from(&pkg_path, base_dir.clone()).await {
         Ok(resolved_path) => {
             let pkg_json: serde_json::Value =
                 serde_json::from_str(&fs::read_to_string(&resolved_path)?)?;
@@ -111,7 +112,7 @@ pub async fn simple_resolver(
         Err(_) => {}
     }
 
-    match resolve_from(&request, base_dir) {
+    match resolve_from(&request, base_dir).await {
         Ok(resolved_path) => {
             let result = resolved_path.to_string_lossy().into_owned();
             return Ok(Some(result));
