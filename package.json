@@ -1,6 +1,6 @@
 {
   "name": "dpdm-fast",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": false,
   "description": "Analyze circular dependencies in your JavaScript/TypeScript projects with Rust.",
   "publishConfig": {

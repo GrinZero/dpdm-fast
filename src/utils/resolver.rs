@@ -1,7 +1,6 @@
 use std::path::{Path, PathBuf};
 
 use std::fs;
-use tokio::fs::metadata;
 
 use crate::node_resolve::lib::resolve_from;
 use crate::parser::types::Alias;
@@ -14,7 +13,7 @@ pub async fn append_suffix(
 ) -> Result<Option<String>, Box<dyn std::error::Error>> {
     for ext in extensions {
         let path_with_ext = format!("{}{}", request, ext);
-        match metadata(&path_with_ext).await {
+        match fs::metadata(&path_with_ext) {
             Ok(metadata) => {
                 if metadata.is_file() {
                     return Ok(Some(path_with_ext));
@@ -25,7 +24,7 @@ pub async fn append_suffix(
     }
 
     // 如果 request 是一个目录，则尝试添加 index 后缀，递归调用
-    match metadata(request).await {
+    match fs::metadata(request) {
         Ok(metadata) => {
             if metadata.is_dir() {
                 return append_suffix_boxed(&format!("{}/index", request), extensions).await;
