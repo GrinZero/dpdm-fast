@@ -36,11 +36,7 @@
     "allowUnreachableCode": false,
     "stripInternal": true,
     "allowUnusedLabels": false,
-    "skipLibCheck": true,
-    "baseUrl": "/Users/bugyaluwang/Desktop/projects/moego-client-portal-branded-app",
-    "paths": {
-      "@/*": ["./src/*", "./assets/*"]
-    }
+    "skipLibCheck": true
   },
   "include": ["./src/**/*.d.ts", "./src/**/*.ts", "./src/**/*.tsx"]
 }

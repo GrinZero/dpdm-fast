@@ -17,7 +17,7 @@ use std::default::Default;
 use std::error::Error as StdError;
 use std::fmt;
 use std::fs::File;
-use std::io::{Error as IOError, ErrorKind as IOErrorKind};
+use std::io::{Error as IOError, ErrorKind as IOErrorKind, Read};
 use std::path::{Component as PathComponent, Path, PathBuf};
 static ROOT: &str = "/";
 
@@ -366,9 +366,14 @@ impl Resolver {
         }
 
         let pkg_dir = pkg_path.parent().unwrap_or_else(|| Path::new(ROOT));
-        let file = File::open(pkg_path).map_err(Error::IOError)?;
-        let reader = std::io::BufReader::new(file);
-        let pkg: Value = serde_json::from_reader(reader).map_err(Error::JSONError)?;
+        let mut file_str = String::new();
+
+        File::open(pkg_path)
+            .map_err(Error::IOError)?
+            .read_to_string(&mut file_str)
+            .map_err(Error::IOError)?;
+        let pkg: Value = serde_json::from_str(&file_str).map_err(Error::JSONError)?;
+
         if !pkg.is_object() {
             self.cache.insert(pkg_path.to_path_buf(), None);
             return Err(RecoverableError::NonObjectPackageJson.into());
@@ -377,7 +382,8 @@ impl Resolver {
         let main_field = self
             .main_fields
             .iter()
-            .find_map(|name| pkg.get(name).and_then(|v| v.as_str()));
+            .find(|name| pkg[name].is_string())
+            .and_then(|name| pkg[name].as_str());
 
         match main_field {
             Some(target) => {
