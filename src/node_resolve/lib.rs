@@ -35,14 +35,6 @@ pub enum Error {
     UnconfiguredBasedir,
 }
 
-impl std::error::Error for Error {}
-impl std::fmt::Display for Error {
-  fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-      write!(f, "{}", self)
-  }
-}
-
-
 impl From<serde_json::Error> for Error {
     fn from(err: serde_json::Error) -> Error {
         Error::JSONError(err)
@@ -244,7 +236,7 @@ impl Resolver {
     }
 
     /// Resolve a `require('target')` argument.
-    pub async fn resolve(&self, target: &str) -> Result<PathBuf, Error> {
+    pub fn resolve(&self, target: &str) -> Result<PathBuf, Error> {
         // 1. If X is a core module
         if is_core_module(target) {
             // 1.a. Return the core module
@@ -386,6 +378,7 @@ impl Resolver {
             .main_fields
             .iter()
             .find_map(|name| pkg.get(name).and_then(|v| v.as_str()));
+
         match main_field {
             Some(target) => {
                 let path = pkg_dir.join(target);
@@ -513,7 +506,7 @@ pub fn is_core_module(target: &str) -> bool {
 ///     Err(err) => panic!("Failed: {:?}", err),
 /// }
 /// ```
-pub async fn resolve(target: &str) -> Result<PathBuf, Error> {
+pub fn resolve(target: &str) -> Result<PathBuf, Error> {
     let key = target.to_string();
     if let Some(cached) = CACHE.get(&key) {
         return Ok(cached.clone().unwrap());
@@ -521,8 +514,7 @@ pub async fn resolve(target: &str) -> Result<PathBuf, Error> {
 
     let result: Result<PathBuf, Error> = Resolver::default()
         .with_basedir(PathBuf::from("."))
-        .resolve(target)
-        .await;
+        .resolve(target);
 
     match result {
         Ok(path) => {
@@ -542,16 +534,13 @@ pub async fn resolve(target: &str) -> Result<PathBuf, Error> {
 ///     Err(err) => panic!("Failed: {:?}", err),
 /// }
 /// ```
-pub async fn resolve_from(target: &str, basedir: PathBuf) -> Result<PathBuf, Error> {
+pub fn resolve_from(target: &str, basedir: PathBuf) -> Result<PathBuf, Error> {
     let key = format!("{}|{}", target, basedir.to_str().unwrap());
     if let Some(cached) = CACHE.get(&key) {
         return Ok(cached.clone().unwrap());
     }
 
-    let result: Result<PathBuf, Error> = Resolver::default()
-        .with_basedir(basedir)
-        .resolve(target)
-        .await;
+    let result: Result<PathBuf, Error> = Resolver::default().with_basedir(basedir).resolve(target);
 
     match result {
         Ok(path) => {
@@ -571,31 +560,31 @@ mod tests {
     fn fixture(part: &str) -> PathBuf {
         env::current_dir().unwrap().join("fixtures").join(part)
     }
-    async fn resolve_fixture(target: &str) -> PathBuf {
-        resolve_from(target, fixture("")).await.unwrap()
+    fn resolve_fixture(target: &str) -> PathBuf {
+        resolve_from(target, fixture("")).unwrap()
     }
 
-    #[tokio::test]
-    async fn appends_extensions() {
+    #[test]
+    fn appends_extensions() {
         assert_eq!(
             fixture("extensions/js-file.js"),
-            resolve_fixture("./extensions/js-file").await
+            resolve_fixture("./extensions/js-file")
         );
         assert_eq!(
             fixture("extensions/json-file.json"),
-            resolve_fixture("./extensions/json-file").await
+            resolve_fixture("./extensions/json-file")
         );
         assert_eq!(
             fixture("extensions/native-file.node"),
-            resolve_fixture("./extensions/native-file").await
+            resolve_fixture("./extensions/native-file")
         );
         assert_eq!(
             fixture("extensions/other-file.ext"),
-            resolve_fixture("./extensions/other-file.ext").await
+            resolve_fixture("./extensions/other-file.ext")
         );
         assert_eq!(
             fixture("extensions/no-ext"),
-            resolve_fixture("./extensions/no-ext").await
+            resolve_fixture("./extensions/no-ext")
         );
         assert_eq!(
             fixture("extensions/other-file.ext"),
@@ -603,7 +592,6 @@ mod tests {
                 .extensions(&[".ext"])
                 .with_basedir(fixture(""))
                 .resolve("./extensions/other-file")
-                .await
                 .unwrap()
         );
         assert_eq!(
@@ -612,36 +600,35 @@ mod tests {
                 .extensions(&[".mjs"])
                 .with_basedir(fixture(""))
                 .resolve("./extensions/module")
-                .await
                 .unwrap()
         );
     }
 
-    #[tokio::test]
-    async fn resolves_package_json() {
+    #[test]
+    fn resolves_package_json() {
         assert_eq!(
             fixture("package-json/main-file/whatever.js"),
-            resolve_fixture("./package-json/main-file").await
+            resolve_fixture("./package-json/main-file")
         );
         assert_eq!(
             fixture("package-json/main-file-noext/whatever.js"),
-            resolve_fixture("./package-json/main-file-noext").await
+            resolve_fixture("./package-json/main-file-noext")
         );
         assert_eq!(
             fixture("package-json/main-dir/subdir/index.js"),
-            resolve_fixture("./package-json/main-dir").await
+            resolve_fixture("./package-json/main-dir")
         );
         assert_eq!(
             fixture("package-json/not-object/index.js"),
-            resolve_fixture("./package-json/not-object").await
+            resolve_fixture("./package-json/not-object")
         );
         assert_eq!(
             fixture("package-json/invalid/index.js"),
-            resolve_fixture("./package-json/invalid").await
+            resolve_fixture("./package-json/invalid")
         );
         assert_eq!(
             fixture("package-json/main-none/index.js"),
-            resolve_fixture("./package-json/main-none").await
+            resolve_fixture("./package-json/main-none")
         );
         assert_eq!(
             fixture("package-json/main-file/whatever.js"),
@@ -649,7 +636,6 @@ mod tests {
                 .main_fields(&["module", "main"])
                 .with_basedir(fixture(""))
                 .resolve("./package-json/main-file")
-                .await
                 .unwrap()
         );
         assert_eq!(
@@ -659,7 +645,6 @@ mod tests {
                 .main_fields(&["module", "main"])
                 .with_basedir(fixture(""))
                 .resolve("./package-json/module")
-                .await
                 .unwrap()
         );
         assert_eq!(
@@ -669,76 +654,63 @@ mod tests {
                 .main_fields(&["module", "main"])
                 .with_basedir(fixture(""))
                 .resolve("./package-json/module-main")
-                .await
                 .unwrap()
         );
     }
 
-    #[tokio::test]
-    async fn resolves_node_modules() {
+    #[test]
+    fn resolves_node_modules() {
         assert_eq!(
             fixture("node-modules/same-dir/node_modules/a.js"),
-            resolve_from("a", fixture("node-modules/same-dir"))
-                .await
-                .unwrap()
+            resolve_from("a", fixture("node-modules/same-dir")).unwrap()
         );
         assert_eq!(
             fixture("node-modules/parent-dir/node_modules/a/index.js"),
-            resolve_from("a", fixture("node-modules/parent-dir/src"))
-                .await
-                .unwrap()
+            resolve_from("a", fixture("node-modules/parent-dir/src")).unwrap()
         );
         assert_eq!(
             fixture("node-modules/package-json/node_modules/dep/lib/index.js"),
-            resolve_from("dep", fixture("node-modules/package-json"))
-                .await
-                .unwrap()
+            resolve_from("dep", fixture("node-modules/package-json")).unwrap()
         );
         assert_eq!(
             fixture("node-modules/walk/src/node_modules/not-ok/index.js"),
-            resolve_from("not-ok", fixture("node-modules/walk/src"))
-                .await
-                .unwrap()
+            resolve_from("not-ok", fixture("node-modules/walk/src")).unwrap()
         );
         assert_eq!(
             fixture("node-modules/walk/node_modules/ok/index.js"),
-            resolve_from("ok", fixture("node-modules/walk/src"))
-                .await
-                .unwrap()
+            resolve_from("ok", fixture("node-modules/walk/src")).unwrap()
         );
     }
 
-    #[tokio::test]
-    async fn preserves_symlinks() {
+    #[test]
+    fn preserves_symlinks() {
         assert_eq!(
             fixture("symlink/node_modules/dep/main.js"),
             Resolver::default()
                 .preserve_symlinks(true)
                 .with_basedir(fixture("symlink"))
                 .resolve("dep")
-                .await
                 .unwrap()
         );
     }
 
-    #[tokio::test]
-    async fn does_not_preserve_symlinks() {
+    #[test]
+    fn does_not_preserve_symlinks() {
         assert_eq!(
             fixture("symlink/linked/main.js"),
             Resolver::default()
                 .preserve_symlinks(false)
                 .with_basedir(fixture("symlink"))
                 .resolve("dep")
-                .await
                 .unwrap()
         );
     }
 
-    #[tokio::test]
-    async fn resolves_absolute_specifier() {
+    #[test]
+    fn resolves_absolute_specifier() {
         let full_path = fixture("extensions/js-file");
         let id = full_path.to_str().unwrap();
-        assert_eq!(fixture("extensions/js-file.js"), resolve(id).await.unwrap());
+        assert_eq!(fixture("extensions/js-file.js"), resolve(id).unwrap());
     }
 
     #[test]
