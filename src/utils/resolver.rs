@@ -1,37 +1,26 @@
 use std::path::{Path, PathBuf};
 
-use tokio::fs::metadata;
 use std::fs;
+use tokio::fs::metadata;
 
 use crate::node_resolve::lib::resolve_from;
 use crate::parser::types::Alias;
 use crate::utils::alias::match_alias_pattern;
 use crate::utils::path::join_paths;
-use futures::future::join_all;
 
 pub async fn append_suffix(
     request: &str,
     extensions: &[String],
 ) -> Result<Option<String>, Box<dyn std::error::Error>> {
-    // 并行处理扩展名检查
-    let futures = extensions.iter().map(|ext| {
+    for ext in extensions {
         let path_with_ext = format!("{}{}", request, ext);
-        async move {
-            match metadata(&path_with_ext).await {
-                Ok(metadata) => {
-                    if metadata.is_file() {
-                        return Some(path_with_ext);
-                    }
+        match metadata(&path_with_ext).await {
+            Ok(metadata) => {
+                if metadata.is_file() {
+                    return Ok(Some(path_with_ext));
                 }
-                Err(_) => {}
             }
-            None
-        }
-    });
-    let results = join_all(futures).await;
-    for result in results {
-        if let Some(path) = result {
-            return Ok(Some(path));
+            Err(_) => {}
         }
     }
 
@@ -98,7 +87,7 @@ pub async fn simple_resolver(
         .to_string_lossy()
         .into_owned();
     // 处理 package 的情况
-    match resolve_from(&pkg_path, base_dir.clone()).await {
+    match resolve_from(&pkg_path, base_dir.clone()) {
         Ok(resolved_path) => {
             let pkg_json: serde_json::Value =
                 serde_json::from_str(&fs::read_to_string(&resolved_path)?)?;
@@ -112,7 +101,7 @@ pub async fn simple_resolver(
         Err(_) => {}
     }
 
-    match resolve_from(&request, base_dir).await {
+    match resolve_from(&request, base_dir) {
         Ok(resolved_path) => {
             let result = resolved_path.to_string_lossy().into_owned();
             return Ok(Some(result));

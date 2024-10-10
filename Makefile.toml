@@ -8,7 +8,7 @@ script = [
 [tasks.dev-perf]
 script = [
   "cargo build",
-  "samply record ./target/debug/dpdm /Users/bugyaluwang/Desktop/projects/moego-mobile/index.js -T --exit-code circular:1 --no-tree --no-warning",
+  "samply record ./target/debug/dpdm ./example/index.js -T --exit-code circular:1 --no-tree --no-warning",
 ]
 
 [tasks.build-for-mac-arm64]
