@@ -40,7 +40,7 @@ pub async fn parse_dependency_tree(
             tsconfig_data
         }
         None => {
-            return HashMap::new();
+            serde_json::json!({})
         }
     };
 
