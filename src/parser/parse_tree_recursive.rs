@@ -177,6 +177,7 @@ pub async fn parse_tree_recursive(
         id,
         path: path.clone(),
         dependencies,
+        skip_dynamic_imports: options.skip_dynamic_imports,
     };
 
     // 遍历 AST

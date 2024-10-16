@@ -1,5 +1,5 @@
-mod parser;
 mod node_resolve;
+mod parser;
 mod utils;
 
 use clap::Parser;
@@ -185,8 +185,10 @@ async fn main() {
         std::process::exit(1);
     }
 
-    let circulars: Vec<Vec<String>> =
-        utils::tree::parse_circular(&mut dependency_tree.clone(), options.skip_dynamic_imports);
+    let circulars: Vec<Vec<String>> = utils::tree::parse_circular(
+        &mut dependency_tree.clone(),
+        args.skip_dynamic_imports.as_deref() == Some("circular"),
+    );
 
     let output = args.output.clone();
     if output.is_some() || !args.no_tree {

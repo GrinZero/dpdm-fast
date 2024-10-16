@@ -8,6 +8,7 @@ pub struct DependencyCollector {
     pub path: PathBuf,
     pub dependencies: Vec<Dependency>,
     pub id: String,
+    pub skip_dynamic_imports: bool,
 }
 
 impl Visit for DependencyCollector {
@@ -24,6 +25,9 @@ impl Visit for DependencyCollector {
     }
 
     fn visit_call_expr(&mut self, expr: &swc_ecma_ast::CallExpr) {
+        if self.skip_dynamic_imports {
+            return;
+        }
         if let Callee::Import(_) = &expr.callee {
             if let Some(arg) = expr.args.get(0) {
                 if let swc_ecma_ast::Expr::Lit(swc_ecma_ast::Lit::Str(ref s)) = *arg.expr {
