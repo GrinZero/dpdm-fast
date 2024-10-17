@@ -1,6 +1,6 @@
 {
   "name": "dpdm-fast",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "private": false,
   "description": "Analyze circular dependencies in your JavaScript/TypeScript projects with Rust.",
   "publishConfig": {
@@ -35,11 +35,10 @@
     "target/x86_64-apple-darwin/release/dpdm",
     "target/aarch64-unknown-linux-musl/release/dpdm",
     "target/x86_64-unknown-linux-musl/release/dpdm",
-    "target/x86_64-pc-windows-gnu/release/dpdm",
-    "target/aarch64-pc-windows-gnu/release/dpdm"
+    "target/x86_64-pc-windows-gnu/release/dpdm"
   ],
   "bin": {
-    "dpdm": "target/release/dpdm"
+    "dpdm": "scripts/dpdm.js"
   },
   "sideEffects": [
     "*.css",
@@ -59,8 +58,7 @@
     "clean": "rm -rf cjs esm lib build temp .cache",
     "start": "npm run clean && npm run build:esm -- --watch",
     "test": "echo 'Pass'",
-    "demo": "tsx ./src/bin/dpdm.ts -T ./example/index.js",
-    "postinstall": "node scripts/dpdm.js"
+    "demo": "tsx ./src/bin/dpdm.ts -T ./example/index.js"
   },
   "repository": {
     "type": "git",
