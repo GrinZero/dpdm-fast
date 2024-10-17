@@ -1,7 +1,7 @@
 use dashmap::DashMap;
 use lazy_static::lazy_static;
 use regex::Regex;
-use std::sync::Arc;
+use std::{fs, sync::Arc};
 
 use super::path::join_paths;
 
@@ -35,6 +35,11 @@ pub fn match_alias_pattern(source: &str, root: &str, alias: &str, path: &str) ->
         let full_path = join_paths(&[root, &transformed_path]);
 
         let full_path_str = full_path.to_string_lossy().to_string();
+
+        // Step 5: 检测 new_request(文件夹或者文件) 是否存在
+        if fs::metadata(&full_path_str).is_err() {
+            return None;
+        }
 
         CACHE.insert(cache_key, Some(full_path_str.clone()));
 
@@ -88,6 +93,14 @@ mod tests {
         assert_eq!(
             match_alias_pattern("@/components/Button_@/A.js", "/User/App", "@/*", "./src/*"),
             Some("/User/App/src/components/Button_@/A.js".to_string())
+        );
+    }
+
+    #[test]
+    fn test_match_alias_pattern_with_all_match_regex() {
+        assert_eq!(
+            match_alias_pattern("components/Button", "/User/App", "*", "./src/*"),
+            Some("/User/App/src/components/Button".to_string())
         );
     }
 }
