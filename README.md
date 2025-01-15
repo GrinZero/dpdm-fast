@@ -1,8 +1,8 @@
 <h1 align="center">
     dpdm-fast
     <br/>
-    <img src="https://img.shields.io/npm/v/dpdm" alt="version">
-    <img src="https://img.shields.io/npm/dm/dpdm" alt="downloads">
+    <img src="https://img.shields.io/npm/v/dpdm-fast" alt="version">
+    <img src="https://img.shields.io/npm/dm/dpdm-fast" alt="downloads">
     <img src="https://img.shields.io/github/stars/acrazing/dpdm" alt="stars">
     <img src="https://img.shields.io/librariesio/github/acrazing/dpdm" alt="dependencies">
     <img src="https://img.shields.io/github/license/acrazing/dpdm" alt="license">
