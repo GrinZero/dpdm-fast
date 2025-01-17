@@ -59,8 +59,8 @@ struct Args {
     no_tree: bool,
 
     /// Print circular to stdout
-    #[arg(long, default_value = "true")]
-    circular: bool,
+    #[arg(long, default_value = "false")]
+    no_circular: bool,
 
     /// Print warning to stdout
     #[arg(long, default_value = "false")]
@@ -247,17 +247,19 @@ async fn main() {
         None
     };
 
-    let is_circular_empty = circulars.is_empty();
-    println!(
-        "{}",
-        "• Circular Dependencies"
-            .bold()
-            .color(if is_circular_empty { "green" } else { "red" })
-    );
-    if is_circular_empty {
-        println!("🚀 No circular dependencies found.");
-    } else {
-        println!("{}", utils::pretty::pretty_circular(&circulars, "  "));
+    if !args.no_circular {
+        let is_circular_empty = circulars.is_empty();
+        println!(
+            "{}",
+            "• Circular Dependencies"
+                .bold()
+                .color(if is_circular_empty { "green" } else { "red" })
+        );
+        if is_circular_empty {
+            println!("🚀 No circular dependencies found.");
+        } else {
+            println!("{}", utils::pretty::pretty_circular(&circulars, "  "));
+        }
     }
 
     if !args.no_warning {
