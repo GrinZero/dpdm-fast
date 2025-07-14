@@ -7,13 +7,15 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use swc_common::{sync::Lrc, FileName, Mark, SourceMap};
-use swc_common::{Globals, GLOBALS};
-use swc_ecma_ast::{EsVersion, Program};
-use swc_ecma_parser::{Parser, StringInput, Syntax, TsSyntax};
-use swc_ecma_transforms_base::resolver;
-use swc_ecma_transforms_typescript::strip;
-use swc_ecma_visit::{FoldWith, VisitWith};
+use swc_core::common::{sync::Lrc, FileName, Mark, SourceMap};
+use swc_core::common::{Globals, GLOBALS};
+use swc_core::ecma::ast::{EsVersion, Program};
+use swc_core::ecma::parser::Lexer;
+use swc_core::ecma::parser::{Parser, StringInput, Syntax, TsSyntax};
+use swc_core::ecma::transforms::base::resolver;
+use swc_core::ecma::transforms::typescript::{strip_type};
+use swc_core::ecma::utils::swc_common;
+use swc_core::ecma::visit::{VisitMutWith, VisitWith};
 
 lazy_static! {
     static ref CACHE: Mutex<HashMap<String, Arc<Option<Vec<Dependency>>>>> =
@@ -119,7 +121,7 @@ pub async fn parse_tree_recursive(
     // 使用 swc 解析代码
     let fm: Lrc<swc_common::SourceFile> =
         cm.new_source_file(FileName::Real(id_path.clone()).into(), file_content);
-    let lexer = swc_ecma_parser::lexer::Lexer::new(
+    let lexer = Lexer::new(
         Syntax::Typescript(TsSyntax {
             tsx: true,
             decorators: false,
@@ -130,14 +132,14 @@ pub async fn parse_tree_recursive(
         None,
     );
 
-    let mut parser: Parser<swc_ecma_parser::lexer::Lexer<'_>> = Parser::new_from(lexer);
+    let mut parser: Parser<Lexer<'_>> = Parser::new_from(lexer);
     let program_result = match options.is_module {
         IsModule::Bool(true) => parser.parse_module().map(Program::Module),
         IsModule::Bool(false) => parser.parse_script().map(Program::Script),
         IsModule::Unknown => parser.parse_program(),
     };
 
-    let program = match program_result {
+    let mut program: Program = match program_result {
         Ok(program) => program,
         Err(_err) => {
             // eprintln!("Failed to parse program: {:?}", err);
@@ -152,9 +154,8 @@ pub async fn parse_tree_recursive(
                     let unresolved_mark = Mark::new();
                     let top_level_mark = Mark::new();
 
-                    let program =
-                        program.fold_with(&mut resolver(unresolved_mark, top_level_mark, true));
-                    let program = program.fold_with(&mut strip(top_level_mark, unresolved_mark));
+                    program.visit_mut_with(&mut resolver(unresolved_mark, top_level_mark, true));
+                    program.visit_mut_with(&mut strip_type());
                     program
                 });
                 program

@@ -1,8 +1,9 @@
 use super::consts::DependencyKind;
 use super::types::Dependency;
 use std::path::PathBuf;
-use swc_ecma_ast::Callee;
-use swc_ecma_visit::{Visit, VisitWith};
+use swc_core::ecma::ast::Callee;
+use swc_core::ecma::visit::{Visit, VisitWith};
+use swc_core::ecma::utils::swc_ecma_ast;
 
 pub struct DependencyCollector {
     pub path: PathBuf,
