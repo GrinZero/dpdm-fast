@@ -5,6 +5,9 @@ use crate::parser::types::{Dependency, DependencyTree};
 pub fn shorten_tree(context: &String, tree: &DependencyTree) -> DependencyTree {
     let mut output: DependencyTree = HashMap::new();
     for (key, dependencies) in tree.iter() {
+        if key.contains("node_modules"){
+            continue;
+        }
         let short_key = Path::new(key)
             .strip_prefix(&context)
             .unwrap_or_else(|_| Path::new(key))

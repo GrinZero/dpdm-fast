@@ -1,8 +1,9 @@
 use super::consts::DependencyKind;
 use super::types::Dependency;
 use std::path::PathBuf;
-use swc_ecma_ast::Callee;
-use swc_ecma_visit::{Visit, VisitWith};
+use swc_core::ecma::ast::Callee;
+use swc_core::ecma::utils::swc_ecma_ast;
+use swc_core::ecma::visit::{Visit, VisitWith};
 
 pub struct DependencyCollector {
     pub path: PathBuf,
@@ -11,12 +12,14 @@ pub struct DependencyCollector {
     pub skip_dynamic_imports: bool,
 }
 
+
 impl Visit for DependencyCollector {
     fn visit_import_decl(&mut self, import: &swc_ecma_ast::ImportDecl) {
         // 处理静态导入
         let request = import.src.value.to_string();
+        let issuer = self.path.to_string_lossy().to_string();
         let dependency = Dependency {
-            issuer: self.path.to_string_lossy().to_string(),
+            issuer,
             request,
             kind: DependencyKind::StaticImport,
             id: Some(self.id.clone()),

@@ -10,7 +10,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
-use swc_common::{sync::Lrc, SourceMap};
+use swc_core::common::{sync::Lrc, SourceMap};
 
 pub async fn parse_dependency_tree(
     entries: &Vec<String>,

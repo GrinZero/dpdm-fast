@@ -7,13 +7,12 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use swc_common::{sync::Lrc, FileName, Mark, SourceMap};
-use swc_common::{Globals, GLOBALS};
-use swc_ecma_ast::{EsVersion, Program};
-use swc_ecma_parser::{Parser, StringInput, Syntax, TsSyntax};
-use swc_ecma_transforms_base::resolver;
-use swc_ecma_transforms_typescript::strip;
-use swc_ecma_visit::{FoldWith, VisitWith};
+use swc_core::common::{sync::Lrc, FileName, SourceMap};
+use swc_core::ecma::ast::{EsVersion, Program};
+use swc_core::ecma::parser::Lexer;
+use swc_core::ecma::parser::{Parser, StringInput, Syntax, TsSyntax};
+use swc_core::ecma::utils::swc_common;
+use swc_core::ecma::visit::VisitWith;
 
 lazy_static! {
     static ref CACHE: Mutex<HashMap<String, Arc<Option<Vec<Dependency>>>>> =
@@ -119,7 +118,7 @@ pub async fn parse_tree_recursive(
     // 使用 swc 解析代码
     let fm: Lrc<swc_common::SourceFile> =
         cm.new_source_file(FileName::Real(id_path.clone()).into(), file_content);
-    let lexer = swc_ecma_parser::lexer::Lexer::new(
+    let lexer = Lexer::new(
         Syntax::Typescript(TsSyntax {
             tsx: true,
             decorators: false,
@@ -130,7 +129,7 @@ pub async fn parse_tree_recursive(
         None,
     );
 
-    let mut parser: Parser<swc_ecma_parser::lexer::Lexer<'_>> = Parser::new_from(lexer);
+    let mut parser: Parser<Lexer<'_>> = Parser::new_from(lexer);
     let program_result = match options.is_module {
         IsModule::Bool(true) => parser.parse_module().map(Program::Module),
         IsModule::Bool(false) => parser.parse_script().map(Program::Script),
@@ -143,25 +142,6 @@ pub async fn parse_tree_recursive(
             // eprintln!("Failed to parse program: {:?}", err);
             return None;
         }
-    };
-
-    let program = match options.transform {
-        true => match id.ends_with(".tsx") || id.ends_with(".ts") {
-            true => {
-                let program = GLOBALS.set(&Globals::new(), || {
-                    let unresolved_mark = Mark::new();
-                    let top_level_mark = Mark::new();
-
-                    let program =
-                        program.fold_with(&mut resolver(unresolved_mark, top_level_mark, true));
-                    let program = program.fold_with(&mut strip(top_level_mark, unresolved_mark));
-                    program
-                });
-                program
-            }
-            false => program,
-        },
-        false => program,
     };
 
     let new_context: PathBuf = Path::new(&id).parent().unwrap().to_path_buf();
@@ -208,6 +188,15 @@ pub async fn parse_tree_recursive(
     for (i, dep) in results.into_iter().enumerate() {
         collector.dependencies[i].id = dep.await;
     }
+
+    // 遍历 collector.dependencies，如果 id 中包含 node_modules，移除该项
+    collector.dependencies.retain(|dep| {
+        if let Some(ref id) = dep.id {
+            !id.contains("node_modules")
+        } else {
+            true
+        }
+    });
 
     // 将收集到的依赖存储到输出和缓存中
     let dependencies = Arc::new(Some(collector.dependencies));
