@@ -1,6 +1,6 @@
 use crate::parser::consts::DependencyKind;
 use regex::Regex;
-use serde::{self, Serializer};
+use serde::{self, Deserialize, Deserializer, Serializer};
 use spinoff::Spinner;
 use std::{
     collections::HashMap,
@@ -16,7 +16,15 @@ where
     serializer.serialize_str(&regex.to_string())
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+pub fn deserialize_regex<'de, D>(deserializer: D) -> Result<Regex, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    Regex::new(&s).map_err(serde::de::Error::custom)
+}
+
+#[derive(Debug, Clone, serde::Serialize, Deserialize)]
 pub enum IsModule {
     Bool(bool),
     Unknown,
@@ -41,14 +49,20 @@ impl fmt::Debug for Progress {
     }
 }
 
-#[derive(Debug, serde::Serialize, Clone)]
+#[derive(Debug, serde::Serialize, Deserialize, Clone)]
 pub struct ParseOptions {
     pub context: String,
     pub extensions: Vec<String>,
     pub js: Vec<String>,
-    #[serde(serialize_with = "serialize_regex")]
+    #[serde(
+        serialize_with = "serialize_regex",
+        deserialize_with = "deserialize_regex"
+    )]
     pub include: Regex,
-    #[serde(serialize_with = "serialize_regex")]
+    #[serde(
+        serialize_with = "serialize_regex",
+        deserialize_with = "deserialize_regex"
+    )]
     pub exclude: Regex,
     pub tsconfig: Option<String>,
     #[serde(skip)]
