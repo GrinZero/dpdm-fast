@@ -58,7 +58,7 @@
     "clean": "rm -rf cjs esm lib build temp .cache",
     "start": "npm run clean && npm run build:esm -- --watch",
     "test": "echo 'Pass'",
-    "demo": "tsx ./src/bin/dpdm.ts -T ./example/index.js"
+    "demo": "tsx ./src/bin/dpdm.ts -T ./example/index.js -o output.json --no-circular --no-tree --no-progress --no-warning"
   },
   "repository": {
     "type": "git",

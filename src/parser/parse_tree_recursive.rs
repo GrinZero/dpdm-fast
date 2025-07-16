@@ -13,7 +13,7 @@ use swc_core::ecma::ast::{EsVersion, Program};
 use swc_core::ecma::parser::Lexer;
 use swc_core::ecma::parser::{Parser, StringInput, Syntax, TsSyntax};
 use swc_core::ecma::transforms::base::resolver;
-use swc_core::ecma::transforms::typescript::{strip_type};
+use swc_core::ecma::transforms::typescript::strip_type;
 use swc_core::ecma::utils::swc_common;
 use swc_core::ecma::visit::{VisitMutWith, VisitWith};
 
@@ -209,6 +209,14 @@ pub async fn parse_tree_recursive(
     for (i, dep) in results.into_iter().enumerate() {
         collector.dependencies[i].id = dep.await;
     }
+
+    collector.dependencies.retain(|dep| {
+        if let Some(ref id) = dep.id {
+            !id.contains("node_modules")
+        } else {
+            true
+        }
+    });
 
     // 将收集到的依赖存储到输出和缓存中
     let dependencies = Arc::new(Some(collector.dependencies));
