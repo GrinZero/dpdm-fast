@@ -59,8 +59,8 @@ struct Args {
     no_tree: bool,
 
     /// Print circular to stdout
-    #[arg(long, default_value = "true")]
-    circular: bool,
+    #[arg(long, default_value = "false")]
+    no_circular: bool,
 
     /// Print warning to stdout
     #[arg(long, default_value = "false")]
@@ -185,10 +185,13 @@ async fn main() {
         std::process::exit(1);
     }
 
-    let circulars: Vec<Vec<String>> = utils::tree::parse_circular(
-        &mut dependency_tree.clone(),
-        args.skip_dynamic_imports.as_deref() == Some("circular"),
-    );
+    let circulars: Vec<Vec<String>> = match args.no_circular {
+        false => utils::tree::parse_circular(
+            &mut dependency_tree.clone(),
+            args.skip_dynamic_imports.as_deref() == Some("circular"),
+        ),
+        true => vec![],
+    };
 
     let output = args.output.clone();
     if output.is_some() || !args.no_tree {
@@ -248,16 +251,18 @@ async fn main() {
     };
 
     let is_circular_empty = circulars.is_empty();
-    println!(
-        "{}",
-        "• Circular Dependencies"
-            .bold()
-            .color(if is_circular_empty { "green" } else { "red" })
-    );
-    if is_circular_empty {
-        println!("🚀 No circular dependencies found.");
-    } else {
-        println!("{}", utils::pretty::pretty_circular(&circulars, "  "));
+    if !args.no_circular {
+        println!(
+            "{}",
+            "• Circular Dependencies"
+                .bold()
+                .color(if is_circular_empty { "green" } else { "red" })
+        );
+        if is_circular_empty {
+            println!("🚀 No circular dependencies found.");
+        } else {
+            println!("{}", utils::pretty::pretty_circular(&circulars, "  "));
+        }
     }
 
     if !args.no_warning {
