@@ -6,8 +6,12 @@ edition = "2021"
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[[bin]]
+name = "dpdm"
+path = "src/main.rs"
+
 [features]
-default = ["bin", "wasm"]
+default = ["bin"]
 bin = [
   "clap",
   "glob",
@@ -18,11 +22,9 @@ bin = [
   "spinoff",
   "dashmap",
   "colored",
-  "lazy_static",
 ]
 wasm = [
   "wasm-bindgen",
-  "lazy_static",
   "swc_core",
   "glob",
   "colored",
@@ -30,6 +32,7 @@ wasm = [
   "spinoff",
   "futures",
   "wasm-bindgen-futures",
+  "js-sys",
 ]
 
 [dependencies]
@@ -37,9 +40,9 @@ wasm = [
 serde = "1.0"
 serde_json = "1.0"
 regex = "1"
+lazy_static = "1.5.0"
 
 
-lazy_static = { version = "1.5.0", optional = true }
 # 二进制独有
 colored = { version = "2.1", optional = true }
 clap = { version = "4.5.17", features = ["derive"], optional = true }
@@ -61,7 +64,9 @@ dashmap = { version = "6.1.0", optional = true }
 # wasm 独有
 wasm-bindgen = { version = "0.2", optional = true }
 wasm-bindgen-futures = { version = "0.4.50", optional = true }
-js-sys = "0.3.77"
+js-sys = { version = "0.3.77", optional = true }
+serde-wasm-bindgen = "0.6.5"
+console_error_panic_hook = "0.1.7"
 
 [dependencies.log]
 version = "0.4"

@@ -1,14 +1,14 @@
 [tasks.dev]
 script = [
   "cargo build",
-  "./target/debug/dpdm ./example/index.js -T --exit-code circular:1 --no-tree"
+  "./target/debug/dpdm /Users/bugyaluwang/Desktop/projects/Boarding_Desktop/src/index.tsx -T --no-tree -o data.json"
 ]
 # script = ["cargo build", "./target/debug/dpdm ./example/index.js"]
 
 [tasks.dev-perf]
 script = [
   "cargo build",
-  "samply record ./target/debug/dpdm ./example/index.js -T --exit-code circular:1 --no-tree --no-warning",
+  "samply record ./target/debug/dpdm /Users/bugyaluwang/Desktop/projects/Boarding_Desktop/src/index.tsx -T --exit-code circular:1 --no-tree --no-warning",
 ]
 
 [tasks.build-for-mac-arm64]

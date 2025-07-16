@@ -4,31 +4,39 @@ mod parser;
 mod utils;
 use js_sys::Promise;
 use parser::parser::parse_dependency_tree;
-use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
+use serde_wasm_bindgen::{from_value,to_value};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::future_to_promise;
 
 #[cfg(feature = "wasm")]
 #[wasm_bindgen]
-pub fn parse_tree(entries_json: String, base_options_json: String) -> Promise {
+pub fn parse_tree(entries: JsValue, base_options: JsValue) -> Promise {
+    console_error_panic_hook::set_once();
     future_to_promise(async move {
-        // 反序列化参数
+        use crate::parser::types::{ParseOptions, ParseOptionsInput};
+        let entries_vec: Vec<String> = from_value(entries)
+            .map_err(|e| JsValue::from_str(&format!("entries parse error: {:?}", e)))?;
 
-        use crate::parser::types::ParseOptions;
-        let entries: Vec<String> = serde_json::from_str(&entries_json)
-            .map_err(|e| JsValue::from_str(&format!("entries json parse error: {:?}", e)))?;
+        let raw_options: ParseOptionsInput = from_value(base_options)
+            .map_err(|e| JsValue::from_str(&format!("options parse error: {:?}", e)))?;
 
-        let base_options: ParseOptions = serde_json::from_str(&base_options_json)
-            .map_err(|e| JsValue::from_str(&format!("base_options json parse error: {:?}", e)))?;
+        let options = ParseOptions {
+            context: raw_options.context,
+            extensions: raw_options.extensions,
+            js: raw_options.js,
+            tsconfig: raw_options.tsconfig,
+            transform: raw_options.transform,
+            skip_dynamic_imports: raw_options.skip_dynamic_imports,
+            include: raw_options.include,
+            exclude: raw_options.exclude,
+            is_module: raw_options.is_module,
+            progress: None, // 这里浏览器无 terminal spinner
+        };
 
         // 调用原异步函数
-        let tree = parse_dependency_tree(&entries, &base_options).await;
+        let tree = parse_dependency_tree(&entries_vec, &options).await;
 
         // 序列化输出
-        let res_json = serde_json::to_string(&tree)
-            .map_err(|e| JsValue::from_str(&format!("result serialize error: {:?}", e)))?;
-
-        Ok(JsValue::from_str(&res_json))
+        to_value(&tree).map_err(|e| JsValue::from_str(&format!("result serialize error: {:?}", e)))
     })
 }

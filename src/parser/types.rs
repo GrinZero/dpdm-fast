@@ -54,6 +54,9 @@ pub struct ParseOptions {
     pub context: String,
     pub extensions: Vec<String>,
     pub js: Vec<String>,
+    pub tsconfig: Option<String>,
+    pub transform: bool,
+    pub skip_dynamic_imports: bool,
     #[serde(
         serialize_with = "serialize_regex",
         deserialize_with = "deserialize_regex"
@@ -64,12 +67,30 @@ pub struct ParseOptions {
         deserialize_with = "deserialize_regex"
     )]
     pub exclude: Regex,
-    pub tsconfig: Option<String>,
+    pub is_module: IsModule, // 是否是 ESM 模块
     #[serde(skip)]
     pub progress: Option<Progress>,
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+pub struct ParseOptionsInput {
+    pub context: String,
+    pub extensions: Vec<String>,
+    pub js: Vec<String>,
+    pub tsconfig: Option<String>,
     pub transform: bool,
     pub skip_dynamic_imports: bool,
-    pub is_module: IsModule, // 是否是 ESM 模块
+    #[serde(
+        serialize_with = "serialize_regex",
+        deserialize_with = "deserialize_regex"
+    )]
+    pub include: Regex,
+    #[serde(
+        serialize_with = "serialize_regex",
+        deserialize_with = "deserialize_regex"
+    )]
+    pub exclude: Regex,
+    pub is_module: IsModule,
 }
 
 #[derive(Debug, serde::Serialize, Clone)]

@@ -48,7 +48,8 @@
   "scripts": {
     "build": "run-s clean && run-p build:cjs build:esm && run-s build:esm:rename build:cjs:rename",
     "build:wasm": "wasm-pack build --target nodejs -- --no-default-features --features wasm",
-    "build:wasm:release": "cargo build --no-default-features --features bin --lib --release --target wasm32-unknown-unknown",
+    "build:bin": "cargo build",
+    "build:w": "cargo build --target wasm32-wasip1 --release --lib --no-default-features --features wasm",
     "build:cjs": "tsc --outDir cjs --module commonjs",
     "build:cjs:rename": "run-p build:cjs:rename:js build:cjs:rename:map",
     "build:cjs:rename:js": "find ./cjs -type f -name '*.js' | sed -E 's/^\\.\\/cjs\\/(.+)$/\\1/' | xargs -I % mv ./cjs/% ./lib/%",

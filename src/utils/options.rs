@@ -4,10 +4,7 @@ use std::path::PathBuf;
 
 pub fn normalize_options(options: Option<ParseOptions>) -> ParseOptions {
     let mut new_options = ParseOptions {
-        context: std::env::current_dir()
-            .unwrap()
-            .to_string_lossy()
-            .into_owned(),
+        context: "".to_string(),
         extensions: vec![
             "".to_string(),
             ".ts".to_string(),
@@ -32,6 +29,15 @@ pub fn normalize_options(options: Option<ParseOptions>) -> ParseOptions {
         progress: None,
         is_module: IsModule::Unknown,
     };
+
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        new_options.context = std::path::PathBuf::from(&new_options.context)
+            .canonicalize()
+            .unwrap()
+            .to_string_lossy()
+            .into_owned();
+    }
 
     // TODO: 目前打开之后无法处理混合模块
     // let package_path = PathBuf::from(&new_options.context).join("package.json");
@@ -59,11 +65,14 @@ pub fn normalize_options(options: Option<ParseOptions>) -> ParseOptions {
         new_options.extensions.insert(0, "".to_string());
     }
 
-    new_options.context = PathBuf::from(new_options.context)
-        .canonicalize()
-        .unwrap()
-        .to_string_lossy()
-        .into_owned();
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        new_options.context = PathBuf::from(new_options.context)
+            .canonicalize()
+            .unwrap()
+            .to_string_lossy()
+            .into_owned();
+    }
 
     if new_options.tsconfig.is_none() {
         let tsconfig_path = PathBuf::from(&new_options.context).join("tsconfig.json");
