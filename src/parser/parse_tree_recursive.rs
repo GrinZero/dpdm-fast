@@ -188,6 +188,10 @@ pub async fn parse_tree_recursive(
         skip_dynamic_imports: options.skip_dynamic_imports,
         exports,
         imports,
+        next_import_id: 0,
+        local_symbol_map: HashMap::new(),
+        // local_dynamic_import_ids: vec![]
+        dynamic_import_expr_to_id_map: HashMap::new(),
     };
 
     // 遍历 AST

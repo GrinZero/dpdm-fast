@@ -89,7 +89,7 @@ struct Args {
     #[arg(long)]
     detect_unused_files_from: Option<String>,
     /// Skip parse import(...) statement
-    #[arg(long)]
+    #[arg(long, short='d')]
     skip_dynamic_imports: Option<String>,
 }
 
@@ -171,7 +171,7 @@ async fn main() {
         tsconfig: args.tsconfig.clone(),
         transform: args.transform,
         symbol: args.symbol,
-        skip_dynamic_imports: args.skip_dynamic_imports.as_deref() == Some("tree"),
+        skip_dynamic_imports: false,
         is_module: IsModule::Unknown,
         progress: match no_progress {
             true => {
@@ -236,12 +236,15 @@ async fn main() {
 
         if output.is_some() {
             let file = File::create(args.output.clone().unwrap()).expect("Failed to create file");
-            let data = json!({
+            let mut data = json!({
                 "entries": entries,
                 "tree": dependency_tree,
                 "circulars": circulars,
                 "symbol": symbol_tree
             });
+              if args.symbol {
+                data["symbol"] = json!(symbol_tree);
+            }
             serde_json::to_writer_pretty(file, &data).expect("Failed to write JSON");
         }
 
