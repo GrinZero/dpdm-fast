@@ -1,7 +1,7 @@
 [tasks.dev]
 script = [
   "cargo build",
-  "./target/debug/dpdm ./example/index.js -T -o output.json --no-circular --no-tree --no-progress --no-warning"
+  "./target/debug/dpdm ./example/index.js -S -T -o output.json --no-circular --no-tree --no-progress --no-warning"
 ]
 # script = ["cargo build", "./target/debug/dpdm ./example/index.js"]
 

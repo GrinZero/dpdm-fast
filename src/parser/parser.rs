@@ -1,10 +1,10 @@
 use super::parse_tree_recursive::parse_tree_recursive;
 use super::types::{Alias, ParseOptions};
-use crate::parser::types::DependencyTree;
+use crate::parser::types::{DependencyTree, SymbolTree};
 use crate::utils::json::strip_jsonc_comments;
 use crate::utils::options::normalize_options;
 use crate::utils::path::join_paths;
-use crate::utils::shorten::shorten_tree;
+use crate::utils::shorten::{shorten_symbol_tree, shorten_tree};
 use glob::glob;
 use std::collections::HashMap;
 use std::fs;
@@ -15,7 +15,7 @@ use swc_core::common::{sync::Lrc, SourceMap};
 pub async fn parse_dependency_tree(
     entries: &Vec<String>,
     base_options: &ParseOptions,
-) -> DependencyTree {
+) -> (DependencyTree, SymbolTree) {
     let options: ParseOptions = normalize_options(Some((*base_options).clone()));
 
     let tsconfig_json = match options.tsconfig.as_ref() {
@@ -28,13 +28,13 @@ pub async fn parse_dependency_tree(
                         Ok(json) => json,
                         Err(e) => {
                             eprintln!("Failed to parse tsconfig.json: {:?}", e);
-                            return HashMap::new();
+                            return (HashMap::new(), HashMap::new());
                         }
                     }
                 }
                 Err(e) => {
                     eprintln!("Failed to read tsconfig.json: {:?}", e);
-                    return HashMap::new();
+                    return (HashMap::new(), HashMap::new());
                 }
             };
             tsconfig_data
@@ -89,6 +89,7 @@ pub async fn parse_dependency_tree(
 
     let cm = Lrc::new(SourceMap::default());
     let output: Arc<Mutex<DependencyTree>> = Arc::new(Mutex::new(HashMap::new()));
+    let symbol_output: Arc<Mutex<SymbolTree>> = Arc::new(Mutex::new(HashMap::new()));
 
     // 获取文件列表
     let mut tasks = vec![];
@@ -98,11 +99,13 @@ pub async fn parse_dependency_tree(
                 Ok(filename) => {
                     let path: PathBuf = current_directory.join(filename);
                     let output_clone = Arc::clone(&output);
+                    let symbol_output_clone = Arc::clone(&symbol_output);
                     let alias_arc = alias.as_ref().map(|a| Arc::new(a.clone()));
                     let task = parse_tree_recursive(
                         current_directory.clone(),
                         path,
                         output_clone,
+                        symbol_output_clone,
                         Arc::new(cm.clone()),
                         Arc::new(options.clone()),
                         alias_arc,
@@ -117,8 +120,14 @@ pub async fn parse_dependency_tree(
     futures::future::join_all(tasks).await;
 
     let output_lock = output.lock().unwrap();
-    shorten_tree(
+    let symbol_lock = symbol_output.lock().unwrap();
+    let deps_tree = shorten_tree(
         &current_directory.to_string_lossy().to_string(),
         &output_lock,
-    )
+    );
+    let symbol_tree = shorten_symbol_tree(
+        &current_directory.to_string_lossy().to_string(),
+        &symbol_lock,
+    );
+    (deps_tree, symbol_tree)
 }

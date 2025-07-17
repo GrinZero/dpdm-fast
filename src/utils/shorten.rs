@@ -1,6 +1,6 @@
 use std::{collections::HashMap, path::Path};
 
-use crate::parser::types::{Dependency, DependencyTree};
+use crate::parser::types::{Dependency, DependencyTree, SymbolTree};
 
 pub fn shorten_tree(context: &String, tree: &DependencyTree) -> DependencyTree {
     let mut output: DependencyTree = HashMap::new();
@@ -48,4 +48,22 @@ pub fn shorten_path(path: &String, context: &String) -> String {
         .to_str()
         .unwrap()
         .to_string()
+}
+
+pub fn shorten_symbol_tree(context: &String, tree: &SymbolTree) -> SymbolTree {
+    let mut output: SymbolTree = HashMap::new();
+    for (key, symbol_node) in tree.iter() {
+        if key.contains("node_modules") {
+            continue;
+        }
+
+        let short_key = Path::new(key)
+            .strip_prefix(&context)
+            .unwrap_or_else(|_| Path::new(key))
+            .to_str()
+            .unwrap()
+            .to_string();
+        output.insert(short_key.clone(), symbol_node.clone());
+    }
+    output
 }

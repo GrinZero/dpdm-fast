@@ -17,6 +17,7 @@ pub fn normalize_options(options: Option<ParseOptions>) -> ParseOptions {
             ".jsx".to_string(),
             ".json".to_string(),
         ],
+        symbol: false,
         js: vec![
             ".ts".to_string(),
             ".tsx".to_string(),
@@ -53,6 +54,7 @@ pub fn normalize_options(options: Option<ParseOptions>) -> ParseOptions {
         new_options.exclude = opts.exclude;
         new_options.include = opts.include;
         new_options.js = opts.js;
+        new_options.symbol = opts.symbol;
     }
 
     if !new_options.extensions.contains(&"".to_string()) {

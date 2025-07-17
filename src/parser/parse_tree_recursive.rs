@@ -1,6 +1,6 @@
 use super::dependenct_collector::DependencyCollector;
 use super::types::{Alias, Dependency, IsModule, ParseOptions};
-use crate::parser::types::DependencyTree;
+use crate::parser::types::{DependencyTree, ExportSymbol, ImportSymbol, SymbolNode, SymbolTree};
 use crate::utils::resolver::simple_resolver;
 use lazy_static::lazy_static;
 use std::collections::HashMap;
@@ -26,6 +26,7 @@ pub async fn parse_tree_recursive(
     context: PathBuf,
     path: PathBuf,
     output: Arc<Mutex<DependencyTree>>,
+    symbol_output: Arc<Mutex<SymbolTree>>,
     cm: Arc<Lrc<SourceMap>>,    // 将 Lrc<SourceMap> 包装在 Arc 中
     options: Arc<ParseOptions>, // 将 ParseOptions 包装在 Arc 中
     alias: Option<Arc<Alias>>,
@@ -63,6 +64,9 @@ pub async fn parse_tree_recursive(
         let cache = CACHE.lock().unwrap();
         if let Some(cached_result) = cache.get(&id) {
             let mut output_lock = output.lock().unwrap();
+            if output_lock.contains_key(&id) {
+                return Some(id.clone());
+            }
             output_lock.insert(id.clone(), Arc::clone(cached_result));
             return Some(id.clone());
         }
@@ -173,22 +177,38 @@ pub async fn parse_tree_recursive(
         output_lock.insert(id.clone(), Arc::new(Some(Vec::new())));
     }
 
+    let exports: Vec<ExportSymbol> = Vec::new();
+    let imports: Vec<ImportSymbol> = Vec::new();
     // 创建一个依赖收集器
     let mut collector: DependencyCollector = DependencyCollector {
         id,
         path: path.clone(),
         dependencies,
+        collect_symbol: options.symbol,
         skip_dynamic_imports: options.skip_dynamic_imports,
+        exports,
+        imports,
     };
 
     // 遍历 AST
     program.visit_with(&mut collector);
+
+    {
+        let symbol_node = SymbolNode {
+            exports: collector.exports,
+            imports: collector.imports,
+        };
+        let mut symbol_tree_lock = symbol_output.lock().unwrap();
+        symbol_tree_lock.insert(collector.id.clone(), Arc::new(Some(symbol_node)));
+    }
+
 
     let mut deps: Vec<_> = Vec::new();
     for dep in &collector.dependencies {
         let path: PathBuf = PathBuf::from(dep.request.clone());
         let new_context: PathBuf = new_context.clone();
         let output_clone = Arc::clone(&output);
+        let symbol_output_clone = Arc::clone(&symbol_output);
         let cm_clone = Arc::clone(&cm);
         let options_clone = Arc::clone(&options);
         let alias_clone = alias.clone();
@@ -197,6 +217,7 @@ pub async fn parse_tree_recursive(
                 new_context,
                 path,
                 output_clone,
+                symbol_output_clone,
                 cm_clone,
                 options_clone,
                 alias_clone,

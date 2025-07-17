@@ -66,6 +66,9 @@ struct Args {
     #[arg(long, default_value = "false")]
     no_warning: bool,
 
+    #[arg(short = 'S', long, default_value = "false")]
+    symbol: bool,
+
     /// The tsconfig path, which is used for resolve path alias
     #[arg(long)]
     tsconfig: Option<String>,
@@ -167,6 +170,7 @@ async fn main() {
         exclude: Regex::new(&args.exclude).unwrap_or_else(|_| Regex::new("$").unwrap()),
         tsconfig: args.tsconfig.clone(),
         transform: args.transform,
+        symbol: args.symbol,
         skip_dynamic_imports: args.skip_dynamic_imports.as_deref() == Some("tree"),
         is_module: IsModule::Unknown,
         progress: match no_progress {
@@ -178,7 +182,7 @@ async fn main() {
         },
     };
 
-    let dependency_tree = parse_dependency_tree(&files, &options).await;
+    let (dependency_tree, symbol_tree) = parse_dependency_tree(&files, &options).await;
 
     if utils::tree::is_empty(&dependency_tree) {
         println!("\nNo entry files were matched.");
@@ -235,7 +239,8 @@ async fn main() {
             let data = json!({
                 "entries": entries,
                 "tree": dependency_tree,
-                "circulars": circulars
+                "circulars": circulars,
+                "symbol": symbol_tree
             });
             serde_json::to_writer_pretty(file, &data).expect("Failed to write JSON");
         }
