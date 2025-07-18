@@ -1,5 +1,6 @@
 use super::dependenct_collector::DependencyCollector;
 use super::types::{Alias, Dependency, IsModule, ParseOptions};
+use crate::parser::strip_type_only_imports::StripTypeOnlyImports;
 use crate::parser::types::{DependencyTree, ExportSymbol, ImportSymbol, SymbolNode, SymbolTree};
 use crate::utils::resolver::simple_resolver;
 use lazy_static::lazy_static;
@@ -64,9 +65,6 @@ pub async fn parse_tree_recursive(
         let cache = CACHE.lock().unwrap();
         if let Some(cached_result) = cache.get(&id) {
             let mut output_lock = output.lock().unwrap();
-            if output_lock.contains_key(&id) {
-                return Some(id.clone());
-            }
             output_lock.insert(id.clone(), Arc::clone(cached_result));
             return Some(id.clone());
         }
@@ -151,7 +149,7 @@ pub async fn parse_tree_recursive(
         }
     };
 
-    let program = match options.transform {
+    program = match options.transform {
         true => match id.ends_with(".tsx") || id.ends_with(".ts") {
             true => {
                 let program = GLOBALS.set(&Globals::new(), || {
@@ -159,7 +157,9 @@ pub async fn parse_tree_recursive(
                     let top_level_mark = Mark::new();
 
                     program.visit_mut_with(&mut resolver(unresolved_mark, top_level_mark, true));
+                    program.visit_mut_with(&mut StripTypeOnlyImports);
                     program.visit_mut_with(&mut strip_type());
+
                     program
                 });
                 program
@@ -205,7 +205,6 @@ pub async fn parse_tree_recursive(
         let mut symbol_tree_lock = symbol_output.lock().unwrap();
         symbol_tree_lock.insert(collector.id.clone(), Arc::new(Some(symbol_node)));
     }
-
 
     let mut deps: Vec<_> = Vec::new();
     for dep in &collector.dependencies {
