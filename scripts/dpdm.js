@@ -2,6 +2,7 @@
 
 const path = require('path');
 const os = require('os');
+const fs = require('fs');
 const { spawn } = require('child_process');
 
 const platform = os.platform();
@@ -22,6 +23,14 @@ const binFile = path.join(
   sourceDir,
   platform === 'win32' ? 'dpdm.exe' : 'dpdm',
 );
+
+try {
+  if (platform !== 'win32') {
+    fs.chmodSync(binFile, 0o755);
+  }
+} catch (e) {
+  // 有些系统可能 readonly，可以忽略
+}
 
 const args = process.argv.slice(2);
 
