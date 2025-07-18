@@ -5,7 +5,7 @@ use super::types::Dependency;
 use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use swc_core::ecma::ast::{
-    Callee, Decl, ExportDecl, Ident, ImportSpecifier, Lit, ModuleExportName, Pat,
+    Callee, Decl, ExportDecl, Ident, ImportSpecifier, ModuleExportName, Pat,
 };
 use swc_core::ecma::utils::swc_ecma_ast;
 use swc_core::ecma::visit::{Visit, VisitWith};
@@ -184,7 +184,9 @@ impl Visit for DependencyCollector {
                         kind: DependencyKind::DynamicImport,
                         id: Some(self.id.clone()),
                     };
-                    self.dependencies.push(dependency);
+                    if !self.skip_dynamic_imports {
+                        self.dependencies.push(dependency);
+                    }
 
                     let id = if let Some(existing_id) =
                         self.dynamic_import_expr_to_id_map.get(&request)

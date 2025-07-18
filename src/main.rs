@@ -171,7 +171,7 @@ async fn main() {
         tsconfig: args.tsconfig.clone(),
         transform: args.transform,
         symbol: args.symbol,
-        skip_dynamic_imports: false,
+        skip_dynamic_imports: args.skip_dynamic_imports.as_deref() == Some("tree"),
         is_module: IsModule::Unknown,
         progress: match no_progress {
             true => {
