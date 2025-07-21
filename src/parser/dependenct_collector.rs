@@ -283,6 +283,36 @@ impl Visit for DependencyCollector {
         var.visit_children_with(self);
     }
 
+    fn visit_fn_decl(&mut self, func: &swc_ecma_ast::FnDecl) {
+        if !self.collect_symbol {
+            return func.visit_children_with(self);
+        }
+
+        let local = func.ident.sym.to_string();
+        let mut used_idents = vec![];
+        func.function.visit_with(&mut IdentCollector {
+            idents: &mut used_idents,
+        });
+        self.local_symbol_map.insert(local, used_idents);
+
+        func.visit_children_with(self);
+    }
+
+    fn visit_class_decl(&mut self, class: &swc_ecma_ast::ClassDecl) {
+        if !self.collect_symbol {
+            return class.visit_children_with(self);
+        }
+
+        let local = class.ident.sym.to_string();
+        let mut used_idents = vec![];
+        class.class.visit_with(&mut IdentCollector {
+            idents: &mut used_idents,
+        });
+        self.local_symbol_map.insert(local, used_idents);
+
+        class.visit_children_with(self);
+    }
+
     fn visit_named_export(&mut self, export: &swc_ecma_ast::NamedExport) {
         if !self.collect_symbol {
             return export.visit_children_with(self);
